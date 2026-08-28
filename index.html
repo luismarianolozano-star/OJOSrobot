@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Ojos Robóticos Inteligentes con Voz</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #000;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            border: 1px solid #111;
+            box-shadow: 0 0 25px rgba(0, 191, 255, 0.25);
+        }
+        .status-container {
+            position: absolute;
+            bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        #status {
+            color: #888;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        #transcript {
+            color: #00bfff;
+            font-size: 18px;
+            font-weight: bold;
+            min-height: 24px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="robotCanvas" width="400" height="300"></canvas>
+
+    <div class="status-container">
+        <div id="status">Iniciando micrófono...</div>
+        <div id="transcript">""</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('robotCanvas');
+        const ctx = canvas.getContext('2d');
+        const statusDiv = document.getElementById('status');
+        const transcriptDiv = document.getElementById('transcript');
+
+        // Variables de dimensiones actuales
+        let ancho_actual = 80;
+        let alto_actual = 80;
+        let ceja_y_actual = 90;
+        let inclinacion_actual = 0;
+
+        // Objetivos de animación
+        let ancho_objetivo = 80;
+        let alto_objetivo = 80;
+        let ceja_y_objetivo = 90;
+        let inclinacion_objetivo = 0;
+
+        // Configuración de velocidades
+        const velocidad = 3;
+        const velocidad_inclinacion = 1;
+
+        // Cambiar objetivos según emoción detectada
+        function cambiarEmocion(emocion) {
+            if (emocion === 'NORMAL') {
+                ancho_objetivo = 80; alto_objetivo = 80; ceja_y_objetivo = 90; inclinacion_objetivo = 0;
+            } else if (emocion === 'ENOJADO') {
+                ancho_objetivo = 100; alto_objetivo = 30; ceja_y_objetivo = 115; inclinacion_objetivo = 20;
+            } else if (emocion === 'SORPRENDIDO') {
+                ancho_objetivo = 65; alto_objetivo = 110; ceja_y_objetivo = 55; inclinacion_objetivo = -10;
+            }
+        }
+
+        // Bucle de renderizado del Canvas (Frecuencia fluida)
+        function actualizarYDibujar() {
+            if (ancho_actual > ancho_objetivo) ancho_actual -= velocidad;
+            if (ancho_actual < ancho_objetivo) ancho_actual += velocidad;
+            if (alto_actual > alto_objetivo) alto_actual -= velocidad;
+            if (alto_actual < alto_objetivo) alto_actual += velocidad;
+
+            if (ceja_y_actual > ceja_y_objetivo) ceja_y_actual -= velocidad;
+            if (ceja_y_actual < ceja_y_objetivo) ceja_y_actual += velocidad;
+            if (inclinacion_actual > inclinacion_objetivo) inclinacion_actual -= velocidad_inclinacion;
+            if (inclinacion_actual < inclinacion_objetivo) inclinacion_actual += velocidad_inclinacion;
+
+            if (Math.abs(ancho_actual - ancho_objetivo) < velocidad) ancho_actual = ancho_objetivo;
+            if (Math.abs(alto_actual - alto_objetivo) < velocidad) alto_actual = alto_objetivo;
+            if (Math.abs(ceja_y_actual - ceja_y_objetivo) < velocidad) ceja_y_actual = ceja_y_objetivo;
+            if (Math.abs(inclinacion_actual - inclinacion_objetivo) < velocidad_inclinacion) inclinacion_actual = inclinacion_objetivo;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Ojo Izquierdo
+            ctx.fillStyle = '#00bfff';
+            ctx.beginPath();
+            ctx.ellipse(110, 150, ancho_actual / 2, alto_actual / 2, 0, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Ojo Derecho
+            ctx.beginPath();
+            ctx.ellipse(290, 150, ancho_actual / 2, alto_actual / 2, 0, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Cejas
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 8;
+            ctx.lineCap = 'round';
+
+            // Ceja Izquierda
+            ctx.beginPath();
+            ctx.moveTo(110 - (ancho_actual / 2), ceja_y_actual - inclinacion_actual);
+            ctx.lineTo(110 + (ancho_actual / 2), ceja_y_actual + inclinacion_actual);
+            ctx.stroke();
+
+            // Ceja Derecha
+            ctx.beginPath();
+            ctx.moveTo(290 - (ancho_actual / 2), ceja_y_actual + inclinacion_actual);
+            ctx.lineTo(290 + (ancho_actual / 2), ceja_y_actual - inclinacion_actual);
+            ctx.stroke();
+
+            requestAnimationFrame(actualizarYDibujar);
+        }
+
+        // --- SISTEMA DE RECONOCIMIENTO DE VOZ NATIVO ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'es-ES';
+            recognition.continuous = true; 
+            recognition.interimResults = false;
+
+            recognition.onstart = () => {
+                statusDiv.textContent = "🎙️ Escuchando comandos...";
+                statusDiv.style.color = "#00ff00";
+            };
+
+            recognition.onerror = (event) => {
+                statusDiv.textContent = "Error de micro, reiniciando...";
+                statusDiv.style.color = "#ff0000";
+                setTimeout(() => { try { recognition.start(); } catch(e){} }, 1000);
+            };
+
+            recognition.onend = () => {
+                try { recognition.start(); } catch(e){}
+            };
+
+            recognition.onresult = (event) => {
+                const resultadoRaw = event.results[event.results.length - 1].transcript;
+                const comando = resultadoRaw.toLowerCase().trim();
+                transcriptDiv.textContent = `"${comando}"`;
+
+                // Unificación lógica de condiciones
+                if (comando.includes('enojado') || comando.includes('bailar')) {
+                    cambiarEmocion('ENOJADO');
+                } else if (comando.includes('asustado') || comando.includes('sorprendido')) {
+                    cambiarEmocion('SORPRENDIDO');
+                } else if (comando.includes('normal') || comando.includes('feliz')) {
+                    cambiarEmocion('NORMAL');
+                }
+            };
+
+            window.addEventListener('DOMContentLoaded', () => {
+                recognition.start();
+            });
+
+        } else {
+            statusDiv.textContent = "Tu navegador no soporta reconocimiento de voz nativo.";
+            statusDiv.style.color = "#ff0000";
+        }
+
+        actualizarYDibujar();
+    </script>
+</body>
+</html>
