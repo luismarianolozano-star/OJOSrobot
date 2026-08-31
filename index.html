@@ -2,188 +2,232 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Ojos Robóticos Inteligentes con Voz</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ojos de Robot Emocionales</title>
     <style>
+        :root {
+            /* Variables para controlar la forma de los ojos de manera fluida */
+            --eye-height: 150px;
+            --eye-radius: 50%;
+            --eye-rotate-left: 0deg;
+            --eye-rotate-right: 0deg;
+            --eyebrow-transform: translateY(0px);
+        }
+
         body {
             margin: 0;
-            background-color: #000;
-            overflow: hidden;
+            background-color: #0c0f12;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ffffff;
+            overflow: hidden;
         }
-        canvas {
-            border: 1px solid #111;
-            box-shadow: 0 0 25px rgba(0, 191, 255, 0.25);
-        }
-        .status-container {
-            position: absolute;
-            bottom: 30px;
+
+        .face {
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
+            gap: 80px;
+            margin-bottom: 50px;
         }
-        #status {
-            color: #888;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+
+        .eye-container {
+            position: relative;
         }
-        #transcript {
-            color: #00bfff;
-            font-size: 18px;
-            font-weight: bold;
-            min-height: 24px;
+
+        /* Cejas del robot */
+        .eyebrow {
+            width: 160px;
+            height: 20px;
+            background-color: #00ffcc;
+            position: absolute;
+            top: -40px;
+            left: -5px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px #00ffcc;
+            /* Transición suave para movimiento de cejas */
+            transition: transform 0.8s ease-in-out;
+            transform: var(--eyebrow-transform);
+        }
+
+        /* Ojos del robot */
+        .eye {
+            width: 150px;
+            height: var(--eye-height);
+            background-color: #00ffcc;
+            border-radius: var(--eye-radius);
+            box-shadow: 0 0 30px #00ffcc, inset 0 0 20px rgba(0,0,0,0.5);
+            /* La magia de la transición gradual ocurre aquí */
+            transition: border-radius 0.8s ease-in-out, height 0.8s ease-in-out, transform 0.8s ease-in-out;
+        }
+
+        .left {
+            transform: rotate(var(--eye-rotate-left));
+        }
+
+        .right {
+            transform: rotate(var(--eye-rotate-right));
+        }
+
+        /* Interfaz de voz */
+        .controls {
             text-align: center;
+        }
+
+        button {
+            background-color: #00ffcc;
+            color: #0c0f12;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #ffffff;
+            box-shadow: 0 0 25px #ffffff;
+        }
+
+        button:disabled {
+            background-color: #444;
+            color: #888;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        #status {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #88a0a8;
+            min-height: 20px;
         }
     </style>
 </head>
 <body>
 
-    <canvas id="robotCanvas" width="400" height="300"></canvas>
+    <div class="face">
+        <div class="eye-container">
+            <div class="eyebrow" id="brow-left"></div>
+            <div class="eye left" id="eye-left"></div>
+        </div>
+        <div class="eye-container">
+            <div class="eyebrow" id="brow-right"></div>
+            <div class="eye right" id="eye-right"></div>
+        </div>
+    </div>
 
-    <div class="status-container">
-        <div id="status">Iniciando micrófono...</div>
-        <div id="transcript">""</div>
+    <div class="controls">
+        <button id="start-btn">Activar Reconocimiento de Voz</button>
+        <p id="status">Haz clic en el botón y di: "feliz", "triste", "enojado" o "normal"</p>
     </div>
 
     <script>
-        const canvas = document.getElementById('robotCanvas');
-        const ctx = canvas.getContext('2d');
-        const statusDiv = document.getElementById('status');
-        const transcriptDiv = document.getElementById('transcript');
+        const root = document.documentElement;
+        const startBtn = document.getElementById('start-btn');
+        const statusText = document.getElementById('status');
 
-        // Variables de dimensiones actuales
-        let ancho_actual = 80;
-        let alto_actual = 80;
-        let ceja_y_actual = 90;
-        let inclinacion_actual = 0;
-
-        // Objetivos de animación
-        let ancho_objetivo = 80;
-        let alto_objetivo = 80;
-        let ceja_y_objetivo = 90;
-        let inclinacion_objetivo = 0;
-
-        // Configuración de velocidades
-        const velocidad = 3;
-        const velocidad_inclinacion = 1;
-
-        // Cambiar objetivos según emoción detectada
-        function cambiarEmocion(emocion) {
-            if (emocion === 'NORMAL') {
-                ancho_objetivo = 80; alto_objetivo = 80; ceja_y_objetivo = 90; inclinacion_objetivo = 0;
-            } else if (emocion === 'ENOJADO') {
-                ancho_objetivo = 100; alto_objetivo = 30; ceja_y_objetivo = 115; inclinacion_objetivo = 20;
-            } else if (emocion === 'SORPRENDIDO') {
-                ancho_objetivo = 65; alto_objetivo = 110; ceja_y_objetivo = 55; inclinacion_objetivo = -10;
+        // Configuración de las emociones modificando variables CSS
+        const emociones = {
+            normal: () => {
+                root.style.setProperty('--eye-height', '150px');
+                root.style.setProperty('--eye-radius', '50%');
+                root.style.setProperty('--eye-rotate-left', '0deg');
+                root.style.setProperty('--eye-rotate-right', '0deg');
+                root.style.setProperty('--eyebrow-transform', 'translateY(0px) rotate(0deg)');
+            },
+            feliz: () => {
+                // Ojos semicirculares hacia arriba (comprimidos por abajo)
+                root.style.setProperty('--eye-height', '100px');
+                root.style.setProperty('--eye-radius', '50% 50% 0% 0%');
+                root.style.setProperty('--eye-rotate-left', '0deg');
+                root.style.setProperty('--eye-rotate-right', '0deg');
+                root.style.setProperty('--eyebrow-transform', 'translateY(-15px) rotate(0deg)');
+            },
+            triste: () => {
+                // Ojos caídos e inclinados
+                root.style.setProperty('--eye-height', '130px');
+                root.style.setProperty('--eye-radius', '40% 40% 50% 50%');
+                root.style.setProperty('--eye-rotate-left', '-15deg');
+                root.style.setProperty('--eye-rotate-right', '15deg');
+                root.style.setProperty('--eyebrow-transform', 'translateY(5px) rotate(0deg)');
+                // Inclinación extra individual para las cejas de pena
+                document.getElementById('brow-left').style.transform = 'translateY(0px) rotate(-15deg)';
+                document.getElementById('brow-right').style.transform = 'translateY(0px) rotate(15deg)';
+                return; // Salimos para evitar que el override global de cejas lo pise
+            },
+            enojado: () => {
+                // Ojos achicados e inclinados hacia el centro
+                root.style.setProperty('--eye-height', '110px');
+                root.style.setProperty('--eye-radius', '50% 50% 30% 30%');
+                root.style.setProperty('--eye-rotate-left', '20deg');
+                root.style.setProperty('--eye-rotate-right', '-20deg');
+                // Cejas bajas e inclinadas
+                document.getElementById('brow-left').style.transform = 'translateY(15px) rotate(15deg)';
+                document.getElementById('brow-right').style.transform = 'translateY(15px) rotate(-15deg)';
+                return;
             }
-        }
+        };
 
-        // Bucle de renderizado del Canvas (Frecuencia fluida)
-        function actualizarYDibujar() {
-            if (ancho_actual > ancho_objetivo) ancho_actual -= velocidad;
-            if (ancho_actual < ancho_objetivo) ancho_actual += velocidad;
-            if (alto_actual > alto_objetivo) alto_actual -= velocidad;
-            if (alto_actual < alto_objetivo) alto_actual += velocidad;
-
-            if (ceja_y_actual > ceja_y_objetivo) ceja_y_actual -= velocidad;
-            if (ceja_y_actual < ceja_y_objetivo) ceja_y_actual += velocidad;
-            if (inclinacion_actual > inclinacion_objetivo) inclinacion_actual -= velocidad_inclinacion;
-            if (inclinacion_actual < inclinacion_objetivo) inclinacion_actual += velocidad_inclinacion;
-
-            if (Math.abs(ancho_actual - ancho_objetivo) < velocidad) ancho_actual = ancho_objetivo;
-            if (Math.abs(alto_actual - alto_objetivo) < velocidad) alto_actual = alto_objetivo;
-            if (Math.abs(ceja_y_actual - ceja_y_objetivo) < velocidad) ceja_y_actual = ceja_y_objetivo;
-            if (Math.abs(inclinacion_actual - inclinacion_objetivo) < velocidad_inclinacion) inclinacion_actual = inclinacion_objetivo;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Ojo Izquierdo
-            ctx.fillStyle = '#00bfff';
-            ctx.beginPath();
-            ctx.ellipse(110, 150, ancho_actual / 2, alto_actual / 2, 0, 0, 2 * Math.PI);
-            ctx.fill();
-
-            // Ojo Derecho
-            ctx.beginPath();
-            ctx.ellipse(290, 150, ancho_actual / 2, alto_actual / 2, 0, 0, 2 * Math.PI);
-            ctx.fill();
-
-            // Cejas
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 8;
-            ctx.lineCap = 'round';
-
-            // Ceja Izquierda
-            ctx.beginPath();
-            ctx.moveTo(110 - (ancho_actual / 2), ceja_y_actual - inclinacion_actual);
-            ctx.lineTo(110 + (ancho_actual / 2), ceja_y_actual + inclinacion_actual);
-            ctx.stroke();
-
-            // Ceja Derecha
-            ctx.beginPath();
-            ctx.moveTo(290 - (ancho_actual / 2), ceja_y_actual + inclinacion_actual);
-            ctx.lineTo(290 + (ancho_actual / 2), ceja_y_actual - inclinacion_actual);
-            ctx.stroke();
-
-            requestAnimationFrame(actualizarYDibujar);
-        }
-
-        // --- SISTEMA DE RECONOCIMIENTO DE VOZ NATIVO ---
+        // Configuración de la API de Reconocimiento de Voz
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-        if (SpeechRecognition) {
+        if (!SpeechRecognition) {
+            statusText.innerText = "Tu navegador no soporta reconocimiento de voz. Usa Chrome o Edge.";
+            startBtn.disabled = true;
+        } else {
             const recognition = new SpeechRecognition();
-            recognition.lang = 'es-ES';
-            recognition.continuous = true; 
-            recognition.interimResults = false;
+            recognition.lang = 'es-ES'; // Idioma español
+            recognition.continuous = false; // Escucha una orden a la vez
+            recognition.interimResults = false; // Solo resultados finales
 
-            recognition.onstart = () => {
-                statusDiv.textContent = "🎙️ Escuchando comandos...";
-                statusDiv.style.color = "#00ff00";
-            };
-
-            recognition.onerror = (event) => {
-                statusDiv.textContent = "Error de micro, reiniciando...";
-                statusDiv.style.color = "#ff0000";
-                setTimeout(() => { try { recognition.start(); } catch(e){} }, 1000);
-            };
-
-            recognition.onend = () => {
-                try { recognition.start(); } catch(e){}
-            };
+            startBtn.addEventListener('click', () => {
+                recognition.start();
+                statusText.innerText = "Escuchando... Di una emoción.";
+                startBtn.textContent = "Micrófono Activo";
+            });
 
             recognition.onresult = (event) => {
-                const resultadoRaw = event.results[event.results.length - 1].transcript;
-                const comando = resultadoRaw.toLowerCase().trim();
-                transcriptDiv.textContent = `"${comando}"`;
+                // Captura lo que entendió el micrófono y lo pasa a minúsculas
+                const comando = event.results[0][0].transcript.toLowerCase();
+                statusText.innerText = `Escuché: "${comando}"`;
+                startBtn.textContent = "Activar Reconocimiento de Voz";
 
-                // Unificación lógica de condiciones
-                if (comando.includes('enojado') || comando.includes('bailar')) {
-                    cambiarEmocion('ENOJADO');
-                } else if (comando.includes('asustado') || comando.includes('sorprendido')) {
-                    cambiarEmocion('SORPRENDIDO');
-                } else if (comando.includes('normal') || comando.includes('feliz')) {
-                    cambiarEmocion('NORMAL');
+                // Limpieza de las cejas por si venían de triste/enojado
+                document.getElementById('brow-left').style.transform = '';
+                document.getElementById('brow-right').style.transform = '';
+
+                // Verifica qué palabra clave está en la frase dicha
+                if (comando.includes('feliz') || comando.includes('alegre')) {
+                    emociones.feliz();
+                } else if (comando.includes('triste') || comando.includes('pena')) {
+                    emociones.triste();
+                } else if (comando.includes('enojado') || comando.includes('furioso') || comando.includes('enfadado')) {
+                    emociones.enojado();
+                } else if (comando.includes('normal') || comando.includes('reiniciar') || comando.includes('base')) {
+                    emociones.normal();
+                } else {
+                    statusText.innerText = `Comando no reconocido ("${comando}"). Prueba con feliz, triste, enojado o normal.`;
                 }
             };
 
-            window.addEventListener('DOMContentLoaded', () => {
-                recognition.start();
-            });
+            recognition.onerror = (event) => {
+                statusText.innerText = `Error en el reconocimiento: ${event.error}`;
+                startBtn.textContent = "Activar Reconocimiento de Voz";
+            };
 
-        } else {
-            statusDiv.textContent = "Tu navegador no soporta reconocimiento de voz nativo.";
-            statusDiv.style.color = "#ff0000";
+            recognition.onend = () => {
+                if(statusText.innerText === "Escuchando... Di una emoción.") {
+                    statusText.innerText = "Se terminó el tiempo. Haz clic para intentar de nuevo.";
+                    startBtn.textContent = "Activar Reconocimiento de Voz";
+                }
+            };
         }
-
-        actualizarYDibujar();
     </script>
 </body>
 </html>
