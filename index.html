@@ -126,11 +126,14 @@
         <button id="start-btn">Activar Reconocimiento de Voz</button>
         <p id="status">Haz clic en el botón y di: "feliz", "triste", "enojado" o "normal"</p>
     </div>
+    <audio id="reproductor" src="micancion.mp3"></audio>
 
     <script>
         const root = document.documentElement;
         const startBtn = document.getElementById('start-btn');
         const statusText = document.getElementById('status');
+        const reproductor = new Audio('micancion.mp3');
+        //const reproductor = document.getElementById('reproductor');
 
         // Configuración de las emociones modificando variables CSS
         const emociones = {
@@ -177,6 +180,10 @@
         // Configuración de la API de Reconocimiento de Voz
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
+         // Limpieza de las cejas por si venían de triste/enojado
+                document.getElementById('brow-left').style.transform = '';
+                document.getElementById('brow-right').style.transform = '';
+
         if (!SpeechRecognition) {
             statusText.innerText = "Tu navegador no soporta reconocimiento de voz. Usa Chrome o Edge.";
             startBtn.disabled = true;
@@ -196,38 +203,48 @@
                 // Captura lo que entendió el micrófono y lo pasa a minúsculas
                 const comando = event.results[0][0].transcript.toLowerCase();
                 statusText.innerText = `Escuché: "${comando}"`;
-                startBtn.textContent = "Activar Reconocimiento de Voz";
+                procesarComando(comando);
+            }}
 
-                // Limpieza de las cejas por si venían de triste/enojado
-                document.getElementById('brow-left').style.transform = '';
-                document.getElementById('brow-right').style.transform = '';
+            function procesarComando(comando) {
+            // Reiniciar emociones
+            emociones.normal();
 
-                // Verifica qué palabra clave está en la frase dicha
-                if (comando.includes('feliz') || comando.includes('alegre')) {
-                    emociones.feliz();
-                } else if (comando.includes('triste') || comando.includes('pena')) {
-                    emociones.triste();
-                } else if (comando.includes('enojado') || comando.includes('furioso') || comando.includes('enfadado')) {
-                    emociones.enojado();
-                } else if (comando.includes('normal') || comando.includes('reiniciar') || comando.includes('base')) {
-                    emociones.normal();
-                } else {
-                    statusText.innerText = `Comando no reconocido ("${comando}"). Prueba con feliz, triste, enojado o normal.`;
-                }
-            };
-
-            recognition.onerror = (event) => {
-                statusText.innerText = `Error en el reconocimiento: ${event.error}`;
-                startBtn.textContent = "Activar Reconocimiento de Voz";
-            };
-
-            recognition.onend = () => {
-                if(statusText.innerText === "Escuchando... Di una emoción.") {
-                    statusText.innerText = "Se terminó el tiempo. Haz clic para intentar de nuevo.";
-                    startBtn.textContent = "Activar Reconocimiento de Voz";
-                }
-            };
+            if (comando.includes('hola') || comando.includes('cómo estás')) {
+                emociones.feliz();
+                responder("¡Hola! Estoy muy feliz de hablar contigo.");
+            } 
+            else if (comando.includes('triste') || comando.includes('llorar')) {
+                emociones.triste();
+                responder("Oh, lamento escuchar eso. Espero alegrarte el día.");
+            } 
+            else if (comando.includes('enojado') || comando.includes('reñir')) {
+                emociones.enojado();
+                responder("¡No me hables así! Me pones de mal genio.");
+            } 
+            else if (comando.includes('música') || comando.includes('canción')) {
+                emociones.feliz();
+                responder("Claro, aquí tienes una canción de prueba.");
+                reproductor.play();
+            } 
+            else if (comando.includes('para') || comando.includes('silencio')) {
+                responder("Parando la música.");
+                reproductor.pause();
+                reproductor.currentTime = 0;
+            } 
+            else {
+                responder("No estoy seguro de cómo responder a eso, pero sigo aprendiendo.");
+            }
         }
+
+        // Función para que el robot hable
+        function responder(texto) {
+            const lectura = new SpeechSynthesisUtterance(texto);
+            lectura.lang = 'es-ES';
+            window.speechSynthesis.speak(lectura);
+        }
+
+                
     </script>
 </body>
 </html>
