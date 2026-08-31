@@ -197,6 +197,7 @@
                 recognition.start();
                 statusText.innerText = "Escuchando... Di una emoción.";
                 startBtn.textContent = "Micrófono Activo";
+                root.recuestFullscreen();
             });
 
             recognition.onresult = (event) => {
