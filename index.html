@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ojos de Robot Emocionales</title>
+    <style>
+        :root {
+            /* Variables para controlar la forma de los ojos de manera fluida */
+            --eye-height: 150px;
+            --eye-radius: 50%;
+            --eye-rotate-left: 0deg;
+            --eye-rotate-right: 0deg;
+            --eyebrow-transform: translateY(0px);
+        }
+
+        body {
+            margin: 0;
+            background-color: #0c0f12;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        .face {
+            display: flex;
+            gap: 80px;
+            margin-bottom: 50px;
+        }
+
+        .eye-container {
+            position: relative;
+        }
+
+        /* Cejas del robot */
+        .eyebrow {
+            width: 160px;
+            height: 20px;
+            background-color: #00ffcc;
+            position: absolute;
+            top: -40px;
+            left: -5px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px #00ffcc;
+            /* Transición suave para movimiento de cejas */
+            transition: transform 0.8s ease-in-out;
+            transform: var(--eyebrow-transform);
+        }
+
+        /* Ojos del robot */
+        .eye {
+            width: 150px;
+            height: var(--eye-height);
+            background-color: #00eeff;
+            border-radius: var(--eye-radius);
+            box-shadow: 0 0 30px #00ffcc, inset 0 0 20px rgba(0,0,0,0.5);
+            /* La magia de la transición gradual ocurre aquí */
+            transition: border-radius 0.8s ease-in-out, height 0.8s ease-in-out, transform 0.8s ease-in-out;
+        }
+
+        .left {
+            transform: rotate(var(--eye-rotate-left));
+        }
+
+        .right {
+            transform: rotate(var(--eye-rotate-right));
+        }
+
+        /* Interfaz de voz */
+        .controls {
+            text-align: center;
+        }
+
+        button {
+            background-color: #00e1ff;
+            color: #0b1109;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #ffffff;
+            box-shadow: 0 0 25px #ffffff;
+        }
+
+        button:disabled {
+            background-color: #444;
+            color: #888;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        #status {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #88a0a8;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+        
+
+    <div class="face">
+        <div class="eye-container">
+            <div class="eyebrow" id="brow-left"></div>
+            <div class="eye left" id="eye-left"></div>
+        </div>
+        <div class="eye-container">
+            <div class="eyebrow" id="brow-right"></div>
+            <div class="eye right" id="eye-right"></div>
+        </div>
+    </div>
+
+    <div class="controls">
+       
+        <button id="start-btn">Activar Reconocimiento de Voz</button>
+        <p id="status">Haz clic en el botón y di: "feliz", "triste", "enojado" o "normal"</p>
+    </div>
+    <audio id="reproductor" src="micancion.mp3"></audio>
+
+    <script>
+        const body = document.querySelector("body");
+        const root = document.documentElement;
+        const Btn = document.getElementById('btn');
+        const startBtn = document.getElementById('start-btn');
+        const statusText = document.getElementById('status');
+        const reproductor = new Audio('micancion.mp3');
+        //const reproductor = document.getElementById('reproductor');
+
+        // Configuración de las emociones modificando variables CSS
+        const emociones = {
+            normal: () => {
+                root.style.setProperty('--eye-height', '150px');
+                root.style.setProperty('--eye-radius', '50%');
+                root.style.setProperty('--eye-rotate-left', '0deg');
+                root.style.setProperty('--eye-rotate-right', '0deg');
+                root.style.setProperty('--eyebrow-transform', 'translateY(0px) rotate(0deg)');
+                document.getElementById('brow-left').style.backgroundColor = '#00eeff';
+                document.getElementById('brow-right').style.backgroundColor = '#00eeff';
+                document.getElementById('eye-right').style.backgroundColor = '#00eeff';
+                document.getElementById('eye-left').style.backgroundColor = '#00eeff';
+            },
+            feliz: () => {
+                // Ojos semicirculares hacia arriba (comprimidos por abajo)
+                root.style.setProperty('--eye-height', '100px');
+                root.style.setProperty('--eye-radius', '50% 50% 0% 0%');
+                root.style.setProperty('--eye-rotate-left', '0deg');
+                root.style.setProperty('--eye-rotate-right', '0deg');
+                root.style.setProperty('--eyebrow-transform', 'translateY(-15px) rotate(0deg)');
+                document.getElementById('brow-left').style.backgroundColor = '#4bee1a';
+                document.getElementById('brow-right').style.backgroundColor = '#4bee1a';
+                document.getElementById('eye-right').style.backgroundColor = '#4bee1a';
+                document.getElementById('eye-left').style.backgroundColor = '#4bee1a';
+                
+            },
+            triste: () => {
+                // Ojos caídos e inclinados
+                root.style.setProperty('--eye-height', '130px');
+                root.style.setProperty('--eye-radius', '40% 40% 50% 50%');
+                root.style.setProperty('--eye-rotate-left', '-15deg');
+                root.style.setProperty('--eye-rotate-right', '15deg');
+                root.style.setProperty('--eyebrow-transform', 'translateY(5px) rotate(0deg)');
+                // Inclinación extra individual para las cejas de pena
+                document.getElementById('brow-left').style.transform = 'translateY(0px) rotate(-15deg)';
+                document.getElementById('brow-right').style.transform = 'translateY(0px) rotate(15deg)';
+                document.getElementById('brow-left').style.backgroundColor = 'blue';
+                document.getElementById('brow-right').style.backgroundColor = 'blue';
+                document.getElementById('eye-right').style.backgroundColor = 'blue';
+                document.getElementById('eye-left').style.backgroundColor = 'blue';
+
+                return; // Salimos para evitar que el override global de cejas lo pise
+            },
+            enojado: () => {
+                // Ojos achicados e inclinados hacia el centro
+                root.style.setProperty('--eye-color','red');
+                root.style.setProperty('--eye-height', '110px');
+                root.style.setProperty('--eye-radius', '50% 50% 30% 30%');
+                root.style.setProperty('--eye-rotate-left', '20deg');
+                root.style.setProperty('--eye-rotate-right', '-20deg');
+                // Cejas bajas e inclinadas
+                document.getElementById('brow-left').style.transform = 'translateY(15px) rotate(15deg)';
+                document.getElementById('brow-right').style.transform = 'translateY(15px) rotate(-15deg)';
+                document.getElementById('brow-left').style.backgroundColor = 'red';
+                document.getElementById('brow-right').style.backgroundColor = 'red';
+                document.getElementById('eye-right').style.backgroundColor = 'red';
+                document.getElementById('eye-left').style.backgroundColor = 'red';
+                return;
+            }
+        };
+
+        // Variable global para almacenar nuestra base de datos
+let baseDeDatos = {};
+
+// 1. Cargar la base de datos automáticamente al iniciar la página
+async function cargarBaseDeDatos() {
+    try {
+        const respuesta = !window.location.protocol.startsWith('file:') 
+            ? await fetch('respuestas.json')
+            : null;
+        
+        if (respuesta) {
+            baseDeDatos = await respuesta.json();
+            console.log("Base de datos cargada con éxito");
+        } else {
+            console.error("Recuerda usar Live Server para cargar archivos JSON externos.");
+        }
+    } catch (error) {
+        console.error("Error cargando el archivo de respuestas:", error);
+    }
+}
+
+// Ejecutar la carga al iniciar
+cargarBaseDeDatos();
+
+body.addEventListener('click', () => {
+                
+                root.requestFullscreen();
+            });
+
+function procesarComando(comando) {
+            // Reiniciar emociones
+            emociones.normal();
+
+            if (comando.includes('hola') || comando.includes('feliz')) {
+                emociones.feliz();
+                //responder("¡Hola! Estoy muy feliz de hablar contigo.");
+            } 
+            else if (comando.includes('triste') || comando.includes('llorar')) {
+                emociones.triste();
+                //responder("Oh, lamento escuchar eso. Espero alegrarte el día.");
+            } 
+            else if (comando.includes('enojado') || comando.includes('reñir')|| comando.includes('enojada')) {
+                emociones.enojado();
+                //responder("¡No me hables así! Me pones de mal genio.");
+            } 
+            else if (comando.includes('música') || comando.includes('canción')) {
+                emociones.feliz();
+                //responder("Claro, aquí tienes una canción de prueba.");
+                reproductor.play();
+            } 
+             else if (comando.includes('full') || comando.includes('completa')) {
+                emociones.feliz();
+                //responder("ahi tienes toda la pantalla.");
+                
+            } 
+            else if (comando.includes('parar') || comando.includes('silencio')) {
+                responder("Parando la música.");
+                reproductor.pause();
+                reproductor.currentTime = 0;
+            } 
+            else {
+                //responder("No estoy seguro de cómo responder a eso, pero sigo aprendiendo.");
+            }
+        }
+
+// 2. Función para buscar la mejor respuesta
+function obtenerRespuestaRobot(textoEscuchado) {
+    // Convertimos lo que dijiste a minúsculas y limpiamos espacios de sobra
+    const comando = textoEscuchado.toLowerCase().trim();
+
+    // Recorremos las preguntas de nuestra base de datos para ver cuál coincide
+    for (let pregunta in baseDeDatos) {
+        // Verificamos si lo que dijiste incluye la palabra clave (ej. si dijiste "hola robot", detectará "hola")
+        if (comando.includes(pregunta)) {
+            const listaRespuestas = baseDeDatos[pregunta];
+            
+            // Elegir una respuesta al azar de la lista
+            const indiceAlazar = Math.floor(Math.random() * listaRespuestas.length);
+            return listaRespuestas[indiceAlazar];
+        }
+    }
+
+    // Respuesta por defecto si no entendió la pregunta
+    return "Lo siento, no tengo una respuesta programada para eso en mi base de datos.";
+}
+
+// 3. Ejemplo de cómo integrarlo cuando tu micrófono detecte texto
+function procesarVozDelUsuario(textoDetectadoPorMicrofono) {
+    console.log("Tú dijiste:   ", textoDetectadoPorMicrofono);
+    procesarComando(textoDetectadoPorMicrofono);
+    // Buscamos la respuesta en la base de datos
+    const respuestaFinal = obtenerRespuestaRobot(textoDetectadoPorMicrofono);
+    
+    console.log("El Robot responde:", respuestaFinal);
+    
+    if (respuestaFinal.includes('piojos')){
+        reproductor.src ='micancion.mp3'
+    }
+    if (respuestaFinal.includes('renga')){
+        reproductor.src ='larenga.mp3'
+    }
+    if (respuestaFinal.includes('redondos')){
+        reproductor.src ='losredondos.mp3'
+    }
+     if (respuestaFinal.includes('Konga')){
+        reproductor.src ='laKonga.mp3'
+    }
+    responder(respuestaFinal);
+    
+    // Aquí puedes mandar 'respuestaFinal' a una función de Texto a Voz (SpeechSynthesis)
+    // o usarla para cambiar las animaciones de los ojos del robot.
+}
+        // Inicializar APIs de Voz de HTML5
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        const synth = window.speechSynthesis;
+
+        // Elementos de la interfaz
+        const orbe = document.getElementById('orbe');
+        const estadoTexto = document.getElementById('estadoTexto');
+        const transcripcionHtml = document.getElementById('transcripcion');
+
+        // Configuración de reconocimiento de voz
+        recognition.lang = 'es-ES';
+        recognition.continuous = true;
+        recognition.interimResults = false;
+
+        let escuchandoActivamente = true;
+
+        // Iniciar al cargar la página
+        window.addEventListener('DOMContentLoaded', () => {
+            //cambiarInterfaz('escuchando');
+            recognition.start();
+        });
+
+        // Captura de voz del usuario
+               // Captura de voz del usuario (Versión corregida contra errores de 'trim')
+        recognition.onresult = (event) => {
+            const lastResultIndex = event.results.length - 1;
+            
+            // Verificamos de forma segura que el resultado y la transcripción existan
+            if (event.results[lastResultIndex] && event.results[lastResultIndex][0]) {
+                const textoUsuario = event.results[lastResultIndex][0].transcript;
+                
+                if (textoUsuario) {
+                    const textoLimpio = textoUsuario.trim();
+                    
+                    // Mostrar lo que entendió en la pantalla
+                    //transcripcionHtml.innerText = `"${textoLimpio}"`;
+                    statusText.innerText= `"${textoLimpio}"`;
+                    
+                    // Procesar la respuesta pasando el texto en minúsculas
+                    procesarVozDelUsuario(textoLimpio.toLowerCase());
+                    
+                    //procesarRespuesta(textoLimpio.toLowerCase());
+                }
+            }
+        };
+
+
+        // Función para procesar comandos y responder
+        function  responder(mensaje) {
+            
+
+            const utterance = new SpeechSynthesisUtterance(mensaje);
+            utterance.lang = 'es-ES';
+
+            // EVENTO: El navegador empieza a hablar
+            utterance.onstart = () => {
+                recognition.stop(); // Apagamos micrófono
+                //cambiarInterfaz('hablando');
+            };
+
+            // EVENTO: El navegador termina de hablar
+            utterance.onend = () => {
+                //cambiarInterfaz('escuchando');
+                if (escuchandoActivamente) {
+                    recognition.start(); // Encendemos micrófono automáticamente
+                }
+            };
+
+            synth.speak(utterance);
+        }
+
+        
+        // Mantener el micrófono vivo si se cierra solo por silencios extremos
+        recognition.onend = () => {
+            if (escuchandoActivamente && !synth.speaking) {
+                recognition.start();
+                //cambiarInterfaz('escuchando');
+            }
+        };
+
+        recognition.onerror = (event) => {
+            // Ignoramos el error 'aborted' ya que ocurre de forma intencional al apagar el micro
+            if (event.error === 'aborted') {
+                console.log("Conexión interrumpida de forma controlada. Reiniciando...");
+                return; 
+            }
+            
+            // Si el error es por silencio prolongado, forzamos el reinicio limpio
+            if (event.error === 'no-speech') {
+                console.log("Silencio detectado, manteniendo micrófono activo...");
+                return;
+            }
+
+            console.error("Error real detectado: ", event.error);
+        };
+    </script>
+</body>
+</html>
