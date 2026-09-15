@@ -1,0 +1,69 @@
+{
+  "hola": [
+    "¡Hola! ¿En qué puedo ayudarte hoy?",
+    "Hola humano, mis sistemas están listos.",
+    "Saludos. Qué bueno escucharte."
+  ],
+  "cómo estás": [
+    "Me encuentro funcionando al cien por ciento.",
+    "Analizando mi sistema... Todo perfecto por aquí.",
+    "Estoy excelente, gracias por preguntar."
+  ],
+  "cómo te llamas": [
+    "Soy roboti.",
+    "Me llamo Robotin",
+    "Me dicen Robot loco"
+  ],
+  "qué eres": [
+    "Soy un prototipo de ojos robóticos interactivos.",
+    "Un sistema de inteligencia artificial en desarrollo."
+  ],
+  "adiós": [
+    "Entendido. Pasando a modo de reposo.",
+    "Adiós. Estaré esperando tus órdenes.",
+    "Apagando micrófonos, ¡hasta luego!"
+  ],
+  "feliz":
+  [
+    
+    "Me alegro que estes feliz",
+    "Yo tambien estoy muy feliz"
+  ],
+  "enojado":
+  [
+    "No me hagas enojar mas de lo que estoy",
+    "Estoy super enojado"
+  ],
+   "enojada":
+  [
+    "No me me gusta que estes enojada",
+    "Estas super enojada, tranquila"
+  ],
+  "llorar":
+  [
+    "siento mucho que estes triste",
+    "lamento mucho que te sientas así",
+    "no llores, que me pongo mal"
+  ],
+"musica":
+[
+  "que bueno que quieras musica",
+  "vamos a bailar",
+  "que alegria, un poco de musica",
+  "que bueno seria moverme al ritmo de la musica"
+],
+"parar":
+[
+  "Entendido, apago la musica",
+  "que bueno que va a haber silencio",
+  "ya estaba necesitando un poco de silencio"
+],
+"tema":
+[
+  
+  "La renga",
+  "Los redondos",
+  "La konga"
+]
+  
+}
