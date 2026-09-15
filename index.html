@@ -296,16 +296,25 @@ function procesarVozDelUsuario(textoDetectadoPorMicrofono) {
     console.log("El Robot responde:", respuestaFinal);
     
     if (respuestaFinal.includes('piojos')){
+        reproductor.pause();
         reproductor.src ='micancion.mp3'
+        reproductor.load();
+        
     }
     if (respuestaFinal.includes('renga')){
+        reproductor.pause();
         reproductor.src ='larenga.mp3'
+        reproductor.load();
     }
     if (respuestaFinal.includes('redondos')){
+        reproductor.pause();
         reproductor.src ='losredondos.mp3'
+        reproductor.load();
     }
      if (respuestaFinal.includes('Konga')){
+         reproductor.pause();
         reproductor.src ='laKonga.mp3'
+         reproductor.load();
     }
     responder(respuestaFinal);
     
